@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IHA Listesi</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-3xl mx-auto">
+
+        <div class="flex gap-8"> 
+            <h1 class="text-2xl font-bold mb-8">IHA Kiralama</h1>
+            
+            <div id="topMenu" class="gap-4">
+                <a href="/uavs/"  class="loginView mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">İlan Ekle</a>
+                <a href="/rents/list/" class="loginView mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Kiralamalarım</a>
+                <a id="loginA" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" href="/login/">Giriş Yap</a>
+                <a id="logoutA" class="loginView mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded" href="#">Çıkış Yap</a>
+            </div>
+        </div>
+        <div>
+            <h2 class="text-xl font-bold mb-2">Ne zaman Kiralamak İstersiniz?</h2>
+            <form id="searchForm" class="mb-4">
+                <label for="startDate" class="block text-sm font-medium text-gray-700">Başlangıç Tarihi</label>
+                <input type="datetime-local" id="startDate" name="startDate" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+                <label for="endDate" class="block text-sm font-medium text-gray-700">Bitiş Tarihi</label>
+                <input type="datetime-local" id="endDate" name="endDate" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+                <button type="submit" class="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    Ara
+                </button>
+            </form>
+        </div>
+        <div>
+            <div class="flex mb-2" style="align-items: center; gap: 30px;">
+                <h2 class="text-xl font-bold">Güncel İlanlar</h2>
+                <div class="flex" style="align-items: center; gap: 10px;">
+                    <input type="checkbox" name="myUavs" id="myUavsCB">
+                    <label for="myUavsCB" class="block text-sm font-medium text-gray-700">Kendi İlanlarımı Göster</label>
+                </div>
+            </div>
+
+            <div id="uavList" class="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Buraya AJAX ile doldurulacak IHA kartları gelecek -->
+            </div>
+            <div id="loader" class="py-4 text-center hidden">
+                <span class="inline-block w-4 h-4 bg-gray-600 rounded-full animate-spin"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Düzenleme Modalı -->
+    <div id="editModal" class="fixed z-10 inset-0 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">İHA Düzenle</h3>
+                    <form id="editForm">
+                        <input type="hidden" id="editUavId">
+                        <label for="editBrand" class="block text-sm font-medium text-gray-700">Marka</label>
+                        <select id="editBrand" name="editBrand" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required></select>
+                        <label for="editModel" class="block text-sm font-medium text-gray-700">Model</label>
+                        <select id="editModel" name="editModel" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required></select>
+                        <label for="editCategory" class="block text-sm font-medium text-gray-700">Kategori</label>
+                        <select id="editCategory" name="editCategory" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required></select>
+                        <label for="editDescription" class="block text-sm font-medium text-gray-700">Açıklama</label>
+                        <textarea id="editDescription" name="editDescription" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required></textarea>
+                        <label for="editImage" class="block text-sm font-medium text-gray-700">Resim</label>
+                        <input type="file" id="editImage" name="editImage" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4">
+                        <label for="editHourlyPrice" class="block text-sm font-medium text-gray-700">Saatlik Fiyat</label>
+                        <input type="number" id="editHourlyPrice" name="editHourlyPrice" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+                        <label for="weight" class="block text-sm font-medium text-gray-700">Ağırlık</label>
+                        <input type="number" id="weight" name="weight" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+                        <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Kaydet</button>
+                        <button type="button" id="closeEditModal" class="mt-4 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">İptal</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            var hasMore = true;
+            const searchForm = $('#searchForm');
+            const loginA = $('#loginA');
+            let loginViews = $('.loginView');
+            const logoutA = $('#logoutA');
+            const myUavsCB = $('#myUavsCB');
+            let showMyUavs = false;
+
+            myUavsCB.on("change", (e) => {
+                showMyUavs = e.target.checked;
+                offset = 0;
+                hasMore = true;
+                $('#uavList').empty();
+                loadIHAList();
+            });
+
+            $('#startDate').val((new Date()).toISOString().slice(0, -8));
+            $('#endDate').val(((function() {
+                var end_date = new Date();
+                end_date.setDate(end_date.getDate() + 1);
+                return end_date;
+            })()).toISOString().slice(0, -8));
+
+            let offset = 0;
+            const limit = 10;
+            let isLoading = false;
+
+            loadIHAList();
+
+            window.addEventListener('scroll', function() {
+                if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 && !isLoading) {
+                    loadIHAList();
+                }
+            });
+
+            function loadIHAList() {
+                if (!hasMore) return;
+
+                isLoading = true;
+                const loader = document.getElementById('loader');
+                loader.classList.remove('hidden');
+
+                const startDate = $('#startDate').val();
+                const endDate = $('#endDate').val();
+
+                fetch(`/api/uavs/?limit=${limit}&offset=${offset}&start_date=${startDate}&end_date=${endDate}&only_owneds=${showMyUavs ? "true" : "false"}`, {
+                    headers: {
+                        ...(localStorage.getItem("access_token") ? {
+                            "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                        } : {})
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const uavListContainer = document.getElementById('uavList');
+                    if (!data || data.length <= 0) {
+                        hasMore = false;
+                    }
+                    data.forEach(uav => {
+                        const uavCard = `
+                            <div class="bg-white rounded-lg shadow-md p-4 cursor-pointer hover:shadow-lg transition duration-300">
+                                <img id="ihaImage" src=${uav.image} alt="IHA Görseli" class="w-full h-96 object-contain rounded-md mb-4">
+                                <h2 class="text-xl font-semibold mb-2">${uav.brand} - ${uav.model}</h2>
+                                <h4 class="text-l mb-2">${uav.description}</h2>
+                                <p class="text-gray-700">${uav.hourly_price} TL</p>
+                                <p class="text-gray-700">${uav.weight} kg</p>
+                                <p class="text-gray-700">Yayınlayan: ${uav.owner_username}</p>
+                                ${uav.owned ? "" : `<button id='${uav.id}-rent' class="nonOwnUav mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                    Kirala
+                                </button>`}
+                                ${uav.owned ? `<button id='${uav.id}-edit' class="ownUav mt-4 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                                    Düzenle
+                                </button>
+                                <button id='${uav.id}-delete' class="ownUav mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                                    Sil
+                                </button>` : ""}
+                            </div>
+                        `;
+                        uavListContainer.innerHTML += uavCard;
+                    });
+
+                    data.forEach(uav => {
+                        $(`#${uav.id}-rent`).on('click', () => {
+                            $.ajax({
+                                url: '/api/rents/',
+                                method: 'POST',
+                                contentType: 'application/json',
+                                headers: {
+                                    ...(localStorage.getItem("access_token") ? {
+                                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                                    } : {})
+                                },
+                                data: JSON.stringify({ uav: uav.id, start_time: startDate, end_time: endDate, price: uav.hourly_price }),
+                                success: function() {
+                                    alert("Kiralama başarılı");
+                                    offset = 0;
+                                    hasMore = true;
+                                    $('#uavList').empty();
+                                    loadIHAList();
+                                },
+                                error: function(error) {
+                                    if (error.status === 401) {
+                                        window.location = "/login/";
+                                    } else {
+                                        alert("Kiralama başarısız", error);
+                                    }
+                                }
+                            });
+                        });
+
+                        $(`#${uav.id}-edit`).on('click', () => {
+                            // Düzenleme modalını aç ve verileri yükle
+                            $('#editModal').removeClass('hidden');
+                            $('#editUavId').val(uav.id);
+                            $('#editBrand').val(uav.brand_id);
+                            $('#editModel').val(uav.model_id);
+                            $('#editCategory').val(uav.category_id);
+                            $('#editDescription').val(uav.description);
+                            $('#editHourlyPrice').val(uav.hourly_price);
+                            $('#weight').val(uav.weight);
+                            // Resim güncellemesi için ekleme
+                            // Dropdownlar için API'den veri çekme
+                            loadBrands();
+                            loadCategories();
+                            loadModels();
+                        });
+
+                        $(`#${uav.id}-delete`).on('click', () => {
+                            if (confirm("Bu İHA'yı silmek istediğinizden emin misiniz?")) {
+                                $.ajax({
+                                    url: `/api/uavs/${uav.id}/`,
+                                    method: 'DELETE',
+                                    headers: {
+                                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                                    },
+                                    success: function() {
+                                        alert("İHA başarıyla silindi");
+                                        offset = 0;
+                                        hasMore = true;
+                                        $('#uavList').empty();
+                                        loadIHAList();
+                                    },
+                                    error: function(error) {
+                                        alert("Silme işlemi başarısız", error);
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+                    offset += limit;
+                    isLoading = false;
+                    loader.classList.add('hidden');
+                })
+                .catch(error => {
+                    console.error('IHA listesi yüklenirken hata oluştu:', error);
+                    isLoading = false;
+                    loader.classList.add('hidden');
+                });
+            }
+
+            function loadBrands() {
+                $.ajax({
+                    url: '/api/brands/',
+                    method: 'GET',
+                    success: function(data) {
+                        data.results.forEach(function(brand) {
+                            $('#editBrand').append(new Option(brand.name, brand.id));
+                        });
+                    }
+                });
+            }
+
+            function loadModels() {
+                $.ajax({
+                    url: '/api/models/',
+                    method: 'GET',
+                    success: function(data) {
+                        data.results.forEach(function(model) {
+                            $('#editModel').append(new Option(model.name, model.id));
+                        });
+                    }
+                });
+            }
+
+            function loadCategories() {
+                $.ajax({
+                    url: '/api/categories/',
+                    method: 'GET',
+                    success: function(data) {
+                        data.results.forEach(function(category) {
+                            $('#editCategory').append(new Option(category.name, category.id));
+                        });
+                    }
+                });
+            }
+
+            $('#editForm').on('submit', function(e) {
+                e.preventDefault();
+                const id = $('#editUavId').val();
+                const brand = $('#editBrand').val();
+                const model = $('#editModel').val();
+                const category = $('#editCategory').val();
+                const description = $('#editDescription').val();
+                const hourlyPrice = $('#editHourlyPrice').val();
+                const weight = $('#weight').val();
+                const image = $('#editImage')[0].files[0];
+
+                const formData = new FormData();
+                formData.append('model', model);
+                formData.append('category', category);
+                formData.append('description', description);
+                formData.append('hourly_price', hourlyPrice);
+                formData.append('weight', weight);
+                if (image) {
+                    formData.append('image', image);
+                }
+
+                $.ajax({
+                    url: `/api/uavs/${id}/`,
+                    method: 'PATCH',
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("access_token")}`
+                    },
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    success: function(data) {
+                        alert("İHA başarıyla güncellendi");
+                        $('#editModal').addClass('hidden');
+                        offset = 0;  // Düzenleme yapıldığında offset'i sıfırla
+                        hasMore = true;
+                        $('#uavList').empty();  // Mevcut sonuçları temizle
+                        loadIHAList();  // Mevcut filtrelere göre listeyi yükle
+                    },
+                    error: function(error) {
+                        alert("İHA güncelleme işlemi başarısız", error);
+                    }
+                });
+            });
+
+            $('#closeEditModal').on('click', function() {
+                $('#editModal').addClass('hidden');
+            });
+
+            searchForm.on("submit", function(e) {
+                e.preventDefault();
+                offset = 0;
+                hasMore = true;
+                $('#uavList').empty();
+                loadIHAList();
+            });
+
+            logoutA.on("click", () => {
+                localStorage.clear();
+                loginA.show();
+                loginViews.hide();
+            });
+
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                loginA.hide();
+                loginViews.show();
+            } else {
+                loginA.show();
+                loginViews.hide();
+            }
+        });
+    </script>
+</body>
+</html>

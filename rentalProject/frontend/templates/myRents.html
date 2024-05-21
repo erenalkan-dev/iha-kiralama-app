@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiralama Listesi</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables CSS CDN -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.css">
+    <!-- DataTables JS CDN -->
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <a href="/">
+            <h1 class="text-3xl font-bold mb-8">Kiralama Listesi</h1>
+        </a>
+        <table id="rentTable" class="display w-full">
+            <thead>
+                <tr>
+                    <th>Kullanıcı</th>
+                    <th>İHA</th>
+                    <th>Başlangıç Zamanı</th>
+                    <th>Bitiş Zamanı</th>
+                    <th>Fiyat (TRY)</th>
+                </tr>
+            </thead>
+            
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Token'ı kontrol et
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                // Token yoksa, login sayfasına yönlendir
+                window.location.href = '/login/';
+                return;
+            }
+            // DataTables'i başlat
+            $('#rentTable').DataTable({
+                "ajax": {
+                    "url": "/api/rents/",
+                    "type": "GET",
+                    "headers": {
+                        "Authorization": `Bearer ${token}`
+                    },
+                    "dataSrc": ""
+                },
+                "columns": [
+                    { "data": "username" },
+                    { "data": "uav_name" },
+                    { "data": "start_time" },
+                    { "data": "end_time" },
+                    { "data": "price" }
+                ],
+                
+            });
+        });
+    </script>
+</body>
+</html>

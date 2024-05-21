@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IHA Ekleme</title>
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <div class="max-w-3xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">IHA Ekle</h1>
+        <form id="addIHAForm" class="mb-4">
+      
+            <label for="brand" class="block text-sm font-medium text-gray-700">Marka</label>
+            <select id="brand" name="brand" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+                <!-- AJAX ile doldurulacak -->
+            </select>
+
+            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
+            <select id="model" name="model" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+                <!-- AJAX ile doldurulacak -->
+            </select>
+
+            
+            <label for="category" class="block text-sm font-medium text-gray-700">Kategori</label>
+            <select id="category" name="category" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+                <!-- AJAX ile doldurulacak -->
+            </select>
+
+            <label for="description" class="block text-sm font-medium text-gray-700">Açıklama</label>
+            <textarea id="description" name="description" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required></textarea>
+
+            <label for="weight" class="block text-sm font-medium text-gray-700">Ağırlık (kg)</label>
+            <input type="number" min="0" step="1" id="weight" name="weight" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+
+            <label for="hourly_price" class="block text-sm font-medium text-gray-700">Saatlik Fiyat (TRY)</label>
+            <input type="number" min="0" step="1" id="hourly_price" name="hourly_price" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+
+            <label for="image" class="block text-sm font-medium text-gray-700">Resim</label>
+            <input type="file" id="image" name="image" class="mt-1 p-2 border border-gray-300 rounded-md w-full mb-4" required>
+
+            <button type="submit" class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Ekle
+            </button>
+        </form>
+        <div id="successMessage" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Başarılı!</strong>
+            <span class="block sm:inline">İHA başarıyla eklendi.</span>
+        </div>
+        <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Hata!</strong>
+            <span class="block sm:inline">İHA eklenirken bir hata oluştu.</span>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Markaları, modelleri ve kategorileri doldur
+            $.ajax({
+                url: '/api/brands/',
+                method: 'GET',
+                success: function(data) {
+                    data.results.forEach(function(brand) {
+                        $('#brand').append(new Option(brand.name, brand.id));
+                    });
+                }
+            });
+
+            $.ajax({
+                url: '/api/models/',
+                method: 'GET',
+                success: function(data) {
+                    data.results.forEach(function(model) {
+                        $('#model').append(new Option(model.name, model.id));
+                    });
+                }
+            });
+
+            $.ajax({
+                url: '/api/categories/',
+                method: 'GET',
+                success: function(data) {
+                    data.results.forEach(function(category) {
+                        $('#category').append(new Option(category.name, category.id));
+                    });
+                }
+            });
+
+            // Form submit işlemi
+            $('#addIHAForm').on('submit', function(e) {
+                e.preventDefault();
+
+                let formData = new FormData(this);
+
+                $.ajax({
+                    url: '/api/uavs/',
+                    method: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers:{
+                        "Authorization" : `Bearer ${localStorage.getItem("access_token")}`
+                    },
+                    success: function(data) {
+                        $('#successMessage').removeClass('hidden');
+                        $('#addIHAForm')[0].reset();
+                    },
+                    error: function(error) {
+                        console.log(error)
+                        if(error.status == 401){
+                            $.ajax({
+                                url: '/api/auth/refresh/',
+                                method: 'POST',
+                                data: {
+                                    refresh: localStorage.getItem('refresh_token')
+                                },
+                                processData: false,
+                                contentType: false,
+                                success: function(data) {
+                                    localStorage.setItem('access_token',data.access_token);
+                                    $.ajax({
+                                        url: '/api/uavs/',
+                                        method: 'POST',
+                                        data: formData,
+                                        processData: false,
+                                        contentType: false,
+                                        headers:{
+                                            "Authorization" : `Bearer ${localStorage.getItem("access_token")}`
+                                        },
+                                        success: function(data) {
+                                            $('#successMessage').removeClass('hidden');
+                                            $('#addIHAForm')[0].reset();
+                                        },
+                                        error: function(error) {
+                                            $('#errorMessage').removeClass('hidden');
+                                        }
+                                    });
+                                },
+                                error: function(error) {
+                                    $('#errorMessage').removeClass('hidden');
+                                }
+                            });
+                        }else {
+                            $('#errorMessage').removeClass('hidden');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
